@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Irregular Verb Trainer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one calm column, a sticky quiz bar, large tap targets. Colour chips for the 13 verb patterns echo the printed revision sheet. */
+:root{
+  --bg:#F3F6FB; --surface:#FFFFFF; --surface2:#EAF0F9; --ink:#0F1B2D; --muted:#566178; --line:#DCE3EE;
+  --accent:#2457D6; --accent-ink:#FFFFFF; --accent-soft:#E3ECFD;
+  --good:#117A47; --good-soft:#DDF3E7; --bad:#B42318; --bad-soft:#FDE7E4; --warn:#9A5B00;
+  --shadow:0 1px 2px rgba(15,27,45,.06),0 6px 20px rgba(15,27,45,.06);
+  --font:'Lexend','Segoe UI','PingFang HK','Microsoft JhengHei','Noto Sans TC',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1220; --surface:#131C2E; --surface2:#1B263C; --ink:#E9EEF8; --muted:#9AA6BC; --line:#25324B;
+  --accent:#6C9CFF; --accent-ink:#0B1220; --accent-soft:#1D2B4A;
+  --good:#4CD08A; --good-soft:#12392A; --bad:#FF8A7D; --bad-soft:#47201C; --warn:#F2B35B;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --surface:#131C2E; --surface2:#1B263C; --ink:#E9EEF8; --muted:#9AA6BC; --line:#25324B;
+  --accent:#6C9CFF; --accent-ink:#0B1220; --accent-soft:#1D2B4A;
+  --good:#4CD08A; --good-soft:#12392A; --bad:#FF8A7D; --bad-soft:#47201C; --warn:#F2B35B;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+#app{max-width:720px;margin:0 auto}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+h1,h2,h3,p{margin:0}
+.muted{color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* shown only while the script has not started (for example inside a file previewer) */
+.boot{display:grid;gap:12px;padding:24px 0}.boot h1{font-size:30px}.boot p{color:var(--muted)}
+/* header */
+.hero{display:grid;gap:14px;padding:6px 0 18px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.hero h1{font-size:clamp(28px,7vw,38px);line-height:1.1;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.hero p{color:var(--muted);max-width:52ch}
+.spectrum{display:flex;gap:4px;flex-wrap:wrap}
+.spectrum i{font-style:normal;font-size:11px;font-weight:600;color:#fff;padding:2px 8px;border-radius:99px}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);display:grid;gap:14px;margin-bottom:14px}
+.card h2{font-size:17px;font-weight:600;display:flex;align-items:baseline;gap:8px}
+.card h2 small{font-size:13px;font-weight:400;color:var(--muted)}
+.step{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:600;flex:none}
+
+/* range */
+.range{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end}
+.range label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.range .to{padding-bottom:12px;color:var(--muted)}
+select{appearance:none;width:100%;background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23788' stroke-width='2'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 14px center;
+  border:1px solid var(--line);border-radius:12px;padding:11px 36px 11px 14px;font-size:20px;font-weight:600;min-height:48px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 14px;font-size:14px;min-height:36px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface2);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:9px 6px;min-height:44px;font-size:15px}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.18);font-weight:600}
+.summary{display:grid;gap:8px}
+.summary b{font-size:22px;font-weight:700}
+.bar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--surface2)}
+.bar i{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--c)}
+.warn{color:var(--bad);font-size:14px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}
+
+/* modes */
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.mode{display:grid;gap:2px;text-align:left;background:var(--surface2);border:1px solid transparent;border-radius:14px;padding:14px;min-height:76px}
+.mode:hover{border-color:var(--accent)}
+.mode b{font-size:16px;font-weight:600}
+.mode span{font-size:13px;color:var(--muted)}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding-top:6px}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;padding:4px 0;font-size:13px}
+
+/* quiz shell */
+.bar-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:6px 0 12px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.bar-top .x{border:1px solid var(--line);background:var(--surface);border-radius:12px;width:44px;height:44px;font-size:18px}
+.prog{height:10px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .25s}
+.count{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:48px;text-align:right}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px 18px;box-shadow:var(--shadow);display:grid;gap:16px}
+.q .label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.word{font-size:clamp(40px,12vw,60px);line-height:1.05;font-weight:700;letter-spacing:-.02em;word-break:break-word}
+.zh{font-size:20px;color:var(--muted)}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+input[type=text]{width:100%;border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-size:22px;font-weight:500;min-height:54px}
+input[type=text]:focus{border-color:var(--accent);outline:none}
+input.ok{border-color:var(--good);background:var(--good-soft)}
+input.bad{border-color:var(--bad);background:var(--bad-soft)}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:14px;padding:14px 20px;font-size:17px;font-weight:600;min-height:52px;width:100%}
+.btn.ghost{background:var(--surface2);color:var(--ink)}
+.btn.good{background:var(--good);color:#fff}
+.btn.bad{background:var(--bad);color:#fff}
+[data-theme="dark"] .btn.good,[data-theme="dark"] .btn.bad{color:#0B1220}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.good,:root:not([data-theme="light"]) .btn.bad{color:#0B1220}}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts{display:grid;gap:10px}
+.opt{border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 16px;font-size:22px;font-weight:500;text-align:left;min-height:58px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.ok{border-color:var(--good);background:var(--good-soft)}
+.opt.bad{border-color:var(--bad);background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.sentence{font-size:clamp(20px,5vw,26px);line-height:1.7;display:block}
+.sentence input{display:inline-block;width:var(--w,8ch);min-width:5ch;max-width:100%;padding:2px 10px;font-size:inherit;min-height:46px;margin:0 4px;vertical-align:middle}
+.sentence .base{font-size:.8em;color:var(--muted);white-space:nowrap}
+mark{background:var(--accent-soft);color:inherit;border-radius:6px;padding:1px 6px;font-weight:600}
+mark.good{background:var(--good-soft)} mark.bad{background:var(--bad-soft)}
+
+/* feedback */
+.fb{border-radius:16px;padding:16px;display:grid;gap:12px;background:var(--surface2)}
+.fb.good{background:var(--good-soft)} .fb.bad{background:var(--bad-soft)}
+.fb h3{font-size:17px;font-weight:600}
+.fb.good h3{color:var(--good)} .fb.bad h3{color:var(--bad)}
+.forms{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form{background:var(--surface);border-radius:12px;padding:10px 14px}
+.form small{display:block;font-size:12px;color:var(--muted)}
+.form b{font-size:24px;font-weight:600}
+.var{font-size:.62em;font-weight:400;color:var(--muted);font-style:italic;margin-left:4px}
+.eg{font-size:15px;color:var(--ink);display:grid;gap:4px}
+.pat{display:flex;gap:10px;align-items:center;font-size:14px;flex-wrap:wrap}
+.tag{display:inline-block;color:#fff;font-weight:600;font-size:12px;padding:2px 9px;border-radius:99px;background:var(--c)}
+.speak{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 14px;font-size:14px;min-height:38px}
+
+/* results */
+.score{display:grid;gap:6px;text-align:center;padding:10px 0}
+.score b{font-size:56px;line-height:1;font-weight:700}
+.miss{display:grid;gap:8px}
+.miss div{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--surface2);border-radius:12px;padding:10px 12px;font-size:15px;align-items:center}
+.miss b{font-weight:600}
+
+/* browse */
+.tools{display:grid;gap:10px}
+.search{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-size:16px;min-height:46px}
+.vlist{display:grid;gap:8px}
+.v{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:14px;padding:10px 14px;display:grid;gap:6px}
+.v-head{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;text-align:left;background:none;border:0;padding:0;width:100%}
+.v-head>*{display:block}
+.v-head b{font-size:18px;font-weight:600;display:block}
+.v-head small{color:var(--muted);font-size:13px;display:block}
+.cell{font-size:17px}
+.cover .cell.hide{background:var(--surface2);color:transparent;border-radius:8px;user-select:none;min-height:28px}
+.cover .cell.hide *{visibility:hidden}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:var(--line)}
+.dot.l{background:#E0A100}.dot.m{background:var(--good)}
+.v-more{border-top:1px dashed var(--line);padding-top:8px;display:grid;gap:8px}
+
+@media (max-width:460px){
+  .fields,.forms{grid-template-columns:1fr}
+  .v-head{grid-template-columns:1fr 1fr}
+  .v-head .cell:last-child{grid-column:2}
+  .miss div{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+
+<div id="app"><div class="boot"><div class="eyebrow">S1 English · Revision</div><h1>Irregular Verb Trainer</h1><p>程式載入中……</p><p>如果這一頁一直是空白，是因為你用了預覽（例如 WhatsApp 或 Google Drive 的預覽）來開啟。預覽不能執行程式，請改用 Chrome 或 Safari 瀏覽器開啟這個檔案或連結。</p></div></div>
+
+<script>
+const DATA = {"verbs":[{"k":"arise","b":"arise","zh":"出現","p":"arose","q":"arisen","c":"5","r":"","core":false,"s":["A problem [[arose]] during the school trip.","Many questions have [[arisen]] since the meeting."]},{"k":"awake","b":"awake","zh":"醒來；覺醒","p":"awoke","q":"awoken","c":"5","r":"","core":false,"s":["I [[awoke]] at six o'clock this morning.","The baby has just [[awoken]]."]},{"k":"be","b":"be","zh":"是；存在","p":"was / were","q":"been","c":"5","r":"","core":true,"s":["We [[were]] at the park yesterday.","She has [[been]] ill for two days."]},{"k":"bear","b":"bear","zh":"承受；生育","p":"bore","q":"borne {/ born（出生）}","c":"5","r":"","core":false,"s":["She bravely [[bore]] the pain.","He has [[borne]] the pain for a week."]},{"k":"beat","b":"beat","zh":"打敗；擊打","p":"beat","q":"beaten","c":"4","r":"","core":true,"s":["Our class [[beat]] Class 1B in the quiz.","Our team has [[beaten]] them twice this year."]},{"k":"become","b":"become","zh":"成為","p":"became","q":"become","c":"3","r":"","core":true,"s":["He [[became]] a teacher last year.","She has [[become]] very tall."]},{"k":"begin","b":"begin","zh":"開始","p":"began","q":"begun","c":"5","r":"","core":true,"s":["The lesson [[began]] at eight o'clock.","The film has already [[begun]]."]},{"k":"bend","b":"bend","zh":"彎曲","p":"bent","q":"bent","c":"2a","r":"","core":true,"s":["She [[bent]] down to tie her shoe.","Someone has [[bent]] my ruler."]},{"k":"beset","b":"beset","zh":"困擾；包圍","p":"beset","q":"beset","c":"1","r":"","core":false,"s":["Many problems [[beset]] the school during the storm.","Money problems have [[beset]] the family for years."]},{"k":"bet","b":"bet","zh":"打賭","p":"bet {/ betted}","q":"bet {/ betted}","c":"1","r":"","core":true,"s":["He [[bet]] me ten dollars that it would rain.","I have never [[bet]] on a football match."]},{"k":"bid1","b":"bid","zh":"出價；投標","p":"bid","q":"bid","c":"1","r":"","core":false,"s":["She [[bid]] fifty dollars for the old book.","Nobody has [[bid]] more than a hundred dollars."]},{"k":"bid2","b":"bid","zh":"吩咐；命令（舊式）","p":"bade {/ bid}","q":"bidden {/ bid}","c":"5","r":"","core":false,"s":["The queen [[bade]] her servants to bring food.","The old man has [[bidden]] the children to come in."]},{"k":"bind","b":"bind","zh":"捆綁；約束","p":"bound","q":"bound","c":"2f","r":"","core":false,"s":["She [[bound]] the books with a piece of string.","The thief was [[bound]] to a chair."]},{"k":"bite","b":"bite","zh":"咬","p":"bit","q":"bitten","c":"5","r":"","core":true,"s":["A mosquito [[bit]] me last night.","The dog has [[bitten]] the postman."]},{"k":"bleed","b":"bleed","zh":"流血","p":"bled","q":"bled","c":"2d","r":"","core":true,"s":["His knee [[bled]] after he fell.","My finger has [[bled]] a lot."]},{"k":"blow","b":"blow","zh":"吹","p":"blew","q":"blown","c":"5","r":"","core":true,"s":["The wind [[blew]] my hat away.","The wind has [[blown]] the door shut."]},{"k":"break","b":"break","zh":"打破","p":"broke","q":"broken","c":"5","r":"","core":true,"s":["Tom [[broke]] the window with a ball.","Who has [[broken]] my pencil?"]},{"k":"breed","b":"breed","zh":"繁殖；培育","p":"bred","q":"bred","c":"2d","r":"","core":false,"s":["The farmer [[bred]] horses on his farm.","These dogs have been [[bred]] for hunting."]},{"k":"bring","b":"bring","zh":"帶來","p":"brought","q":"brought","c":"2g","r":"","core":true,"s":["I [[brought]] my lunch to school.","Have you [[brought]] your PE kit today?"]},{"k":"broadcast","b":"broadcast","zh":"廣播","p":"broadcast","q":"broadcast","c":"1","r":"","core":false,"s":["The radio [[broadcast]] the news at noon.","The match has been [[broadcast]] live."]},{"k":"build","b":"build","zh":"建造","p":"built","q":"built","c":"2a","r":"","core":true,"s":["They [[built]] a snowman in the garden.","The school has [[built]] a new library."]},{"k":"burn","b":"burn","zh":"燃燒","p":"burnt {(AmE: burned)}","q":"burnt {(AmE: burned)}","c":"2b","r":"","core":true,"s":["I [[burnt]] the toast this morning.","The candle has [[burnt]] down."]},{"k":"burst","b":"burst","zh":"爆裂","p":"burst","q":"burst","c":"1","r":"","core":false,"s":["The balloon [[burst]] with a loud bang.","The water pipe has [[burst]]."]},{"k":"buy","b":"buy","zh":"購買","p":"bought","q":"bought","c":"2g","r":"","core":true,"s":["Mum [[bought]] me a new bag.","I have [[bought]] a ticket for the concert."]},{"k":"cast","b":"cast","zh":"投擲；選角","p":"cast","q":"cast","c":"1","r":"","core":false,"s":["He [[cast]] a stone into the lake.","The director has [[cast]] a young girl as the princess."]},{"k":"catch","b":"catch","zh":"捕捉","p":"caught","q":"caught","c":"2g","r":"","core":true,"s":["He [[caught]] the ball with one hand.","The police have [[caught]] the thief."]},{"k":"choose","b":"choose","zh":"選擇","p":"chose","q":"chosen","c":"5","r":"","core":true,"s":["I [[chose]] the red bag.","She has [[chosen]] a book from the library."]},{"k":"cling","b":"cling","zh":"緊抱；依附","p":"clung","q":"clung","c":"2e","r":"","core":false,"s":["The baby monkey [[clung]] to its mother.","The child has [[clung]] to her mum all day."]},{"k":"come","b":"come","zh":"來","p":"came","q":"come","c":"3","r":"","core":true,"s":["My cousin [[came]] to my house yesterday.","The bus has just [[come]]."]},{"k":"cost","b":"cost","zh":"值（多少錢）","p":"cost","q":"cost","c":"1","r":"","core":true,"s":["The ticket [[cost]] fifty dollars.","The repairs have [[cost]] a lot of money."]},{"k":"creep","b":"creep","zh":"爬行","p":"crept","q":"crept","c":"2a","r":"","core":false,"s":["The cat [[crept]] up to the bird.","A spider has [[crept]] under my bed."]},{"k":"cut","b":"cut","zh":"切；剪","p":"cut","q":"cut","c":"1","r":"","core":true,"s":["Peter [[cut]] his finger with a knife.","Mum has [[cut]] the cake into eight pieces."]},{"k":"deal","b":"deal","zh":"處理；交易","p":"dealt","q":"dealt","c":"2a","r":"","core":false,"s":["The teacher [[dealt]] with the problem quickly.","We have [[dealt]] with all the questions."]},{"k":"dig","b":"dig","zh":"挖掘","p":"dug","q":"dug","c":"2e","r":"","core":true,"s":["The dog [[dug]] a hole in the garden.","The workers have [[dug]] a deep hole."]},{"k":"dive","b":"dive","zh":"跳水；俯衝","p":"dived {(AmE: dove)}","q":"dived","c":"7","r":"","core":true,"s":["She [[dived]] into the pool.","The boys have [[dived]] into the sea."]},{"k":"do","b":"do","zh":"做（事）；進行","p":"did","q":"done","c":"5","r":"","core":true,"s":["I [[did]] my homework before dinner.","Have you [[done]] your homework?"]},{"k":"draw","b":"draw","zh":"畫；拉","p":"drew","q":"drawn","c":"5","r":"","core":true,"s":["She [[drew]] a picture of her family.","He has [[drawn]] a map of the school."]},{"k":"dream","b":"dream","zh":"夢見","p":"dreamt {(AmE: dreamed)}","q":"dreamt {(AmE: dreamed)}","c":"2b","r":"","core":true,"s":["I [[dreamt]] about my holiday last night.","She has always [[dreamt]] of being a pilot."]},{"k":"drink","b":"drink","zh":"喝","p":"drank","q":"drunk","c":"5","r":"","core":true,"s":["He [[drank]] two glasses of water.","I have already [[drunk]] my milk."]},{"k":"drive","b":"drive","zh":"駕駛","p":"drove","q":"driven","c":"5","r":"","core":true,"s":["Dad [[drove]] us to school this morning.","My uncle has [[driven]] a taxi for ten years."]},{"k":"dwell","b":"dwell","zh":"居住；細想","p":"dwelt {(AmE: dwelled)}","q":"dwelt {(AmE: dwelled)}","c":"2b","r":"","core":false,"s":["The old man [[dwelt]] in a small village.","Many families have [[dwelt]] in this village for years."]},{"k":"eat","b":"eat","zh":"吃","p":"ate","q":"eaten","c":"5","r":"","core":true,"s":["We [[ate]] noodles for lunch.","I have not [[eaten]] breakfast yet."]},{"k":"fall","b":"fall","zh":"落下","p":"fell","q":"fallen","c":"5","r":"","core":true,"s":["The boy [[fell]] off his bike.","The leaves have [[fallen]] from the trees."]},{"k":"feed","b":"feed","zh":"餵食","p":"fed","q":"fed","c":"2d","r":"","core":true,"s":["She [[fed]] the ducks in the park.","Have you [[fed]] the cat?"]},{"k":"feel","b":"feel","zh":"感覺","p":"felt","q":"felt","c":"2a","r":"","core":true,"s":["I [[felt]] tired after the race.","She has [[felt]] ill since Monday."]},{"k":"fight","b":"fight","zh":"打鬥","p":"fought","q":"fought","c":"2g","r":"","core":true,"s":["The two boys [[fought]] over a toy.","The soldiers have [[fought]] bravely."]},{"k":"find","b":"find","zh":"找到","p":"found","q":"found","c":"2f","r":"","core":true,"s":["I [[found]] my keys under the sofa.","Have you [[found]] your pen?"]},{"k":"fit","b":"fit","zh":"適合；合身","p":"fit {/ fitted}","q":"fit {/ fitted}","c":"1","r":"","core":false,"s":["The shoes [[fit]] me well.","This jacket has never [[fit]] me."]},{"k":"flee","b":"flee","zh":"逃跑","p":"fled","q":"fled","c":"2c","r":"","core":false,"s":["The thief [[fled]] from the shop.","Many people have [[fled]] from the fire."]},{"k":"fling","b":"fling","zh":"拋；投擲","p":"flung","q":"flung","c":"2e","r":"","core":false,"s":["He [[flung]] his bag onto the sofa.","She has [[flung]] the window open."]},{"k":"fly","b":"fly","zh":"飛行","p":"flew","q":"flown","c":"5","r":"","core":true,"s":["The birds [[flew]] south for the winter.","We have [[flown]] to Tokyo twice."]},{"k":"forbid","b":"forbid","zh":"禁止","p":"forbade","q":"forbidden","c":"5","r":"bid","core":false,"s":["My parents [[forbade]] me to stay out late.","Eating in class has been [[forbidden]]."]},{"k":"forecast","b":"forecast","zh":"預測","p":"forecast {/ forecasted}","q":"forecast {/ forecasted}","c":"1","r":"cast","core":true,"s":["The weatherman [[forecast]] rain for Sunday.","Heavy rain has been [[forecast]] for tomorrow."]},{"k":"forego","b":"forego","zh":"先於；在……之前","p":"forewent","q":"foregone","c":"5","r":"go","core":false,"s":["A short speech [[forewent]] the school concert.","A bright flash of lightning has [[foregone]] the thunder."]},{"k":"foretell","b":"foretell","zh":"預言；預告","p":"foretold","q":"foretold","c":"2c","r":"tell","core":false,"s":["The old woman [[foretold]] the storm.","Nobody has [[foretold]] this change."]},{"k":"forget","b":"forget","zh":"忘記","p":"forgot","q":"forgotten","c":"5","r":"get","core":true,"s":["I [[forgot]] my umbrella this morning.","I have [[forgotten]] his name."]},{"k":"forgive","b":"forgive","zh":"寬恕","p":"forgave","q":"forgiven","c":"5","r":"give","core":true,"s":["She [[forgave]] her brother for breaking her toy.","I have [[forgiven]] him."]},{"k":"forgo","b":"forgo","zh":"放棄；省去","p":"forwent","q":"forgone","c":"5","r":"go","core":false,"s":["He [[forwent]] dessert to stay healthy.","She has [[forgone]] her holiday to study."]},{"k":"forsake","b":"forsake","zh":"拋棄；放棄","p":"forsook","q":"forsaken","c":"5","r":"","core":false,"s":["The sailor never [[forsook]] his ship.","The old man has [[forsaken]] his home."]},{"k":"freeze","b":"freeze","zh":"凍結；結冰","p":"froze","q":"frozen","c":"5","r":"","core":true,"s":["The lake [[froze]] last winter.","The water in the bottle has [[frozen]]."]},{"k":"get","b":"get","zh":"獲得；變得","p":"got","q":"got {(AmE: gotten)}","c":"5","r":"","core":true,"s":["I [[got]] a new phone for my birthday.","He has [[got]] much taller this year."]},{"k":"give","b":"give","zh":"給予","p":"gave","q":"given","c":"5","r":"","core":true,"s":["Mum [[gave]] me some money.","The teacher has [[given]] us a lot of homework."]},{"k":"go","b":"go","zh":"去","p":"went","q":"gone","c":"5","r":"","core":true,"s":["We [[went]] to the beach last Sunday.","She has [[gone]] to the library."]},{"k":"grind","b":"grind","zh":"磨；研磨","p":"ground","q":"ground","c":"2f","r":"","core":false,"s":["Dad [[ground]] some coffee beans.","We have [[ground]] the pepper."]},{"k":"grow","b":"grow","zh":"成長；種植","p":"grew","q":"grown","c":"5","r":"","core":true,"s":["The plant [[grew]] very fast.","You have [[grown]] taller since last year."]},{"k":"hang1","b":"hang","zh":"懸掛","p":"hung","q":"hung","c":"2e","r":"","core":true,"s":["She [[hung]] her coat on the hook.","I have [[hung]] the picture on the wall."]},{"k":"hang2","b":"hang","zh":"處決（絞死）","p":"hanged","q":"hanged","c":"7","r":"","core":false,"s":["In the old days, the king [[hanged]] thieves.","The thief was [[hanged]] at dawn."]},{"k":"have","b":"have","zh":"擁有；有","p":"had","q":"had","c":"2c","r":"","core":true,"s":["We [[had]] noodles for lunch.","She has [[had]] a cold for three days."]},{"k":"hear","b":"hear","zh":"聽到","p":"heard","q":"heard","c":"2c","r":"","core":true,"s":["I [[heard]] a strange noise last night.","Have you [[heard]] the news?"]},{"k":"hide","b":"hide","zh":"隱藏","p":"hid","q":"hidden","c":"5","r":"","core":true,"s":["The child [[hid]] behind the door.","Someone has [[hidden]] my shoes."]},{"k":"hit","b":"hit","zh":"打；擊中","p":"hit","q":"hit","c":"1","r":"","core":true,"s":["The ball [[hit]] the window.","The car has [[hit]] a tree."]},{"k":"hold","b":"hold","zh":"握住；舉行","p":"held","q":"held","c":"2d","r":"","core":true,"s":["She [[held]] the baby gently.","The school has [[held]] a sports day every year."]},{"k":"hurt","b":"hurt","zh":"傷害","p":"hurt","q":"hurt","c":"1","r":"","core":true,"s":["I [[hurt]] my knee in the game.","She has [[hurt]] her hand."]},{"k":"keep","b":"keep","zh":"保持","p":"kept","q":"kept","c":"2a","r":"","core":true,"s":["He [[kept]] the secret.","I have [[kept]] this toy for ten years."]},{"k":"kneel","b":"kneel","zh":"跪下","p":"knelt {(AmE: kneeled)}","q":"knelt {(AmE: kneeled)}","c":"2b","r":"","core":false,"s":["He [[knelt]] down to tie his shoelaces.","The children have [[knelt]] on the floor."]},{"k":"know","b":"know","zh":"知道；認識","p":"knew","q":"known","c":"5","r":"","core":true,"s":["I [[knew]] the answer.","I have [[known]] her since Primary One."]},{"k":"lay","b":"lay","zh":"放置；下（蛋）","p":"laid","q":"laid","c":"2c","r":"","core":true,"s":["She [[laid]] the book on the desk.","The hen has [[laid]] three eggs."]},{"k":"lead","b":"lead","zh":"引導","p":"led","q":"led","c":"2d","r":"","core":true,"s":["The guide [[led]] us up the hill.","Our team has [[led]] the game since the start."]},{"k":"lean","b":"lean","zh":"倚靠；傾斜","p":"leant {(AmE: leaned)}","q":"leant {(AmE: leaned)}","c":"2b","r":"","core":false,"s":["He [[leant]] against the wall.","She has [[leant]] her bike against the fence."]},{"k":"leap","b":"leap","zh":"跳躍","p":"leapt {(AmE: leaped)}","q":"leapt {(AmE: leaped)}","c":"2b","r":"","core":false,"s":["The frog [[leapt]] into the pond.","The dog has [[leapt]] over the fence."]},{"k":"learn","b":"learn","zh":"學習","p":"learnt {(AmE: learned)}","q":"learnt {(AmE: learned)}","c":"2b","r":"","core":true,"s":["I [[learnt]] a new song last week.","We have [[learnt]] ten new words today."]},{"k":"leave","b":"leave","zh":"離開","p":"left","q":"left","c":"2a","r":"","core":true,"s":["He [[left]] home at seven o'clock.","The train has already [[left]]."]},{"k":"lend","b":"lend","zh":"借出","p":"lent","q":"lent","c":"2a","r":"","core":true,"s":["She [[lent]] me her pen.","I have [[lent]] my bike to my cousin."]},{"k":"let","b":"let","zh":"讓；允許","p":"let","q":"let","c":"1","r":"","core":true,"s":["Mum [[let]] me watch TV.","The teacher has [[let]] us go home early."]},{"k":"lie","b":"lie","zh":"躺；位於","p":"lay","q":"lain","c":"5","r":"","core":true,"s":["The cat [[lay]] on the sofa all afternoon.","The book has [[lain]] on the desk for a week."]},{"k":"light","b":"light","zh":"點亮","p":"lit {/ lighted}","q":"lit {/ lighted}","c":"2b","r":"","core":true,"s":["Dad [[lit]] the candles on the cake.","She has [[lit]] a fire."]},{"k":"lose","b":"lose","zh":"失去；輸","p":"lost","q":"lost","c":"2a","r":"","core":true,"s":["I [[lost]] my keys on the bus.","Our team has [[lost]] three matches."]},{"k":"make","b":"make","zh":"製造；使","p":"made","q":"made","c":"2c","r":"","core":true,"s":["Mum [[made]] a birthday cake.","I have [[made]] a card for my teacher."]},{"k":"mean","b":"mean","zh":"意思是；打算","p":"meant","q":"meant","c":"2a","r":"","core":true,"s":["I [[meant]] to call you last night.","I have never [[meant]] to hurt you."]},{"k":"meet","b":"meet","zh":"遇見","p":"met","q":"met","c":"2d","r":"","core":true,"s":["I [[met]] my friend at the MTR station.","We have [[met]] before."]},{"k":"mislead","b":"mislead","zh":"誤導","p":"misled","q":"misled","c":"2d","r":"lead","core":false,"s":["The wrong map [[misled]] us.","The advert has [[misled]] many customers."]},{"k":"misspell","b":"misspell","zh":"拼錯","p":"misspelt {(AmE: misspelled)}","q":"misspelt {(AmE: misspelled)}","c":"2b","r":"spell","core":false,"s":["He [[misspelt]] my name on the card.","I have [[misspelt]] the word again."]},{"k":"mistake","b":"mistake","zh":"誤解；弄錯","p":"mistook","q":"mistaken","c":"5","r":"take","core":true,"s":["I [[mistook]] him for my cousin.","She has [[mistaken]] me for someone else."]},{"k":"mow","b":"mow","zh":"割草","p":"mowed","q":"mown {/ mowed}","c":"6","r":"","core":false,"s":["Dad [[mowed]] the lawn on Saturday.","The grass has just been [[mown]]."]},{"k":"overcome","b":"overcome","zh":"克服","p":"overcame","q":"overcome","c":"3","r":"come","core":true,"s":["She [[overcame]] her fear of dogs.","He has [[overcome]] many difficulties."]},{"k":"overdo","b":"overdo","zh":"做得過火","p":"overdid","q":"overdone","c":"5","r":"do","core":false,"s":["He [[overdid]] the exercise and felt tired.","You have [[overdone]] the salt in the soup."]},{"k":"overhear","b":"overhear","zh":"無意中聽到","p":"overheard","q":"overheard","c":"2c","r":"hear","core":false,"s":["I [[overheard]] them talking about the party.","She has [[overheard]] a secret."]},{"k":"oversleep","b":"oversleep","zh":"睡過頭","p":"overslept","q":"overslept","c":"2a","r":"sleep","core":false,"s":["I [[overslept]] and was late for school.","He has [[overslept]] again."]},{"k":"overtake","b":"overtake","zh":"超越；追上","p":"overtook","q":"overtaken","c":"5","r":"take","core":false,"s":["The red car [[overtook]] the bus.","The runner has [[overtaken]] the others."]},{"k":"overthrow","b":"overthrow","zh":"推翻","p":"overthrew","q":"overthrown","c":"5","r":"throw","core":false,"s":["The people [[overthrew]] the cruel king.","The government has been [[overthrown]]."]},{"k":"pay","b":"pay","zh":"付款","p":"paid","q":"paid","c":"2c","r":"","core":true,"s":["Dad [[paid]] for the tickets.","Have you [[paid]] for your lunch?"]},{"k":"plead","b":"plead","zh":"懇求；辯護","p":"pleaded {/ pled (AmE)}","q":"pleaded {/ pled (AmE)}","c":"7","r":"","core":false,"s":["He [[pleaded]] with his mum to let him go.","She has [[pleaded]] for help."]},{"k":"prove","b":"prove","zh":"證明","p":"proved","q":"proved {/ proven}","c":"6","r":"","core":false,"s":["The test [[proved]] that I was right.","The experiment has [[proved]] the teacher's idea."]},{"k":"put","b":"put","zh":"放","p":"put","q":"put","c":"1","r":"","core":true,"s":["I [[put]] my bag under the desk.","She has [[put]] the milk in the fridge."]},{"k":"quit","b":"quit","zh":"退出；辭職；戒掉","p":"quit {/ quitted}","q":"quit {/ quitted}","c":"1","r":"","core":true,"s":["He [[quit]] the football team last year.","She has [[quit]] eating sweets."]},{"k":"read","b":"read","zh":"閱讀","p":"read {/red/}","q":"read {/red/}","c":"1","r":"","core":true,"s":["I [[read]] a funny story last night.","I have [[read]] this book three times."]},{"k":"rebuild","b":"rebuild","zh":"重建","p":"rebuilt","q":"rebuilt","c":"2a","r":"build","core":true,"s":["They [[rebuilt]] the bridge after the storm.","The school has been [[rebuilt]]."]},{"k":"rewrite","b":"rewrite","zh":"重寫","p":"rewrote","q":"rewritten","c":"5","r":"write","core":true,"s":["He [[rewrote]] his story.","I have [[rewritten]] my essay twice."]},{"k":"rid","b":"rid","zh":"除去；擺脫","p":"rid","q":"rid","c":"1","r":"","core":false,"s":["They [[rid]] the house of mice.","We have [[rid]] the garden of weeds."]},{"k":"ride","b":"ride","zh":"騎乘","p":"rode","q":"ridden","c":"5","r":"","core":true,"s":["She [[rode]] her bike to school.","I have never [[ridden]] a horse."]},{"k":"ring","b":"ring","zh":"響；打電話","p":"rang","q":"rung","c":"5","r":"","core":true,"s":["The bell [[rang]] at four o'clock.","The phone has [[rung]] three times."]},{"k":"rise","b":"rise","zh":"上升","p":"rose","q":"risen","c":"5","r":"","core":true,"s":["The sun [[rose]] at six o'clock.","The price of rice has [[risen]]."]},{"k":"run","b":"run","zh":"跑","p":"ran","q":"run","c":"3","r":"","core":true,"s":["He [[ran]] to the bus stop.","She has [[run]] ten kilometres."]},{"k":"saw","b":"saw","zh":"鋸","p":"sawed","q":"sawn {/ sawed}","c":"6","r":"","core":false,"s":["Dad [[sawed]] the wood in half.","The tree has been [[sawn]] into pieces."]},{"k":"say","b":"say","zh":"說","p":"said","q":"said","c":"2c","r":"","core":true,"s":["She [[said]] hello to me.","He has [[said]] sorry many times."]},{"k":"see","b":"see","zh":"看見","p":"saw","q":"seen","c":"5","r":"","core":true,"s":["I [[saw]] a rainbow after the rain.","Have you [[seen]] my pen?"]},{"k":"seek","b":"seek","zh":"尋找；尋求","p":"sought","q":"sought","c":"2g","r":"","core":false,"s":["The boy [[sought]] help from his teacher.","She has [[sought]] advice from her mum."]},{"k":"sell","b":"sell","zh":"出售","p":"sold","q":"sold","c":"2c","r":"","core":true,"s":["The shop [[sold]] all its cakes.","I have [[sold]] my old phone."]},{"k":"send","b":"send","zh":"發送","p":"sent","q":"sent","c":"2a","r":"","core":true,"s":["She [[sent]] a card to her friend.","I have [[sent]] an email to my teacher."]},{"k":"set","b":"set","zh":"設置；放置","p":"set","q":"set","c":"1","r":"","core":true,"s":["Mum [[set]] the table for dinner.","The teacher has [[set]] a test for Friday."]},{"k":"sew","b":"sew","zh":"縫","p":"sewed","q":"sewn {/ sewed}","c":"6","r":"","core":false,"s":["Grandma [[sewed]] a button on my shirt.","She has [[sewn]] a new dress."]},{"k":"shake","b":"shake","zh":"搖動","p":"shook","q":"shaken","c":"5","r":"","core":true,"s":["He [[shook]] my hand.","The earthquake has [[shaken]] the building."]},{"k":"shave","b":"shave","zh":"剃（鬚）","p":"shaved","q":"shaved {/ shaven}","c":"6","r":"","core":true,"s":["Dad [[shaved]] his beard yesterday.","He has [[shaved]] his head."]},{"k":"shear","b":"shear","zh":"剪（羊毛）；修剪","p":"sheared","q":"shorn {/ sheared}","c":"6","r":"","core":false,"s":["The farmer [[sheared]] the sheep.","The sheep have been [[shorn]]."]},{"k":"shed","b":"shed","zh":"脫落；流（淚／血）","p":"shed","q":"shed","c":"1","r":"","core":false,"s":["The tree [[shed]] its leaves in autumn.","The snake has [[shed]] its skin."]},{"k":"shine","b":"shine","zh":"發光","p":"shone","q":"shone","c":"2d","r":"","core":true,"s":["The sun [[shone]] all day.","The moon has [[shone]] brightly tonight."]},{"k":"shoot","b":"shoot","zh":"射擊","p":"shot","q":"shot","c":"2d","r":"","core":true,"s":["The player [[shot]] the ball into the goal.","He has [[shot]] three goals today."]},{"k":"show","b":"show","zh":"展示","p":"showed","q":"shown {/ showed}","c":"6","r":"","core":true,"s":["She [[showed]] me her photos.","He has [[shown]] me the way."]},{"k":"shrink","b":"shrink","zh":"縮小","p":"shrank","q":"shrunk","c":"5","r":"","core":false,"s":["My jumper [[shrank]] in the wash.","The shirt has [[shrunk]]."]},{"k":"shut","b":"shut","zh":"關閉","p":"shut","q":"shut","c":"1","r":"","core":true,"s":["He [[shut]] the door quietly.","The shop has [[shut]] for the day."]},{"k":"sing","b":"sing","zh":"唱","p":"sang","q":"sung","c":"5","r":"","core":true,"s":["She [[sang]] a song at the concert.","We have [[sung]] this song before."]},{"k":"sink","b":"sink","zh":"沉沒","p":"sank","q":"sunk","c":"5","r":"","core":true,"s":["The boat [[sank]] in the sea.","The ship has [[sunk]]."]},{"k":"sit","b":"sit","zh":"坐","p":"sat","q":"sat","c":"2d","r":"","core":true,"s":["He [[sat]] next to me in class.","I have [[sat]] here for an hour."]},{"k":"slay","b":"slay","zh":"殺死","p":"slew","q":"slain","c":"5","r":"","core":false,"s":["The knight [[slew]] the dragon.","The dragon has been [[slain]]."]},{"k":"sleep","b":"sleep","zh":"睡覺","p":"slept","q":"slept","c":"2a","r":"","core":true,"s":["I [[slept]] for nine hours last night.","The baby has [[slept]] all afternoon."]},{"k":"slide","b":"slide","zh":"滑動","p":"slid","q":"slid","c":"2d","r":"","core":true,"s":["The boy [[slid]] down the slide.","The car has [[slid]] off the road."]},{"k":"sling","b":"sling","zh":"投擲；吊掛","p":"slung","q":"slung","c":"2e","r":"","core":false,"s":["He [[slung]] his bag over his shoulder.","She has [[slung]] her coat on the chair."]},{"k":"slit","b":"slit","zh":"割開；切開","p":"slit","q":"slit","c":"1","r":"","core":false,"s":["She [[slit]] the envelope open.","He has [[slit]] the box open with scissors."]},{"k":"smell","b":"smell","zh":"聞到","p":"smelt {(AmE: smelled)}","q":"smelt {(AmE: smelled)}","c":"2b","r":"","core":true,"s":["I [[smelt]] fresh bread in the kitchen.","The room has [[smelt]] bad since Monday."]},{"k":"smite","b":"smite","zh":"重擊；懲罰","p":"smote","q":"smitten","c":"5","r":"","core":false,"s":["The knight [[smote]] the monster with his sword.","The monster has been [[smitten]] down by the knight."]},{"k":"sow","b":"sow","zh":"播種","p":"sowed","q":"sown {/ sowed}","c":"6","r":"","core":false,"s":["The farmer [[sowed]] seeds in spring.","The seeds have been [[sown]]."]},{"k":"speak","b":"speak","zh":"說話","p":"spoke","q":"spoken","c":"5","r":"","core":true,"s":["She [[spoke]] to me in English.","I have [[spoken]] to the teacher."]},{"k":"speed","b":"speed","zh":"加速","p":"sped {/ speeded}","q":"sped {/ speeded}","c":"2d","r":"","core":false,"s":["The car [[sped]] down the road.","The train has [[sped]] past."]},{"k":"spell","b":"spell","zh":"拼寫","p":"spelt {(AmE: spelled)}","q":"spelt {(AmE: spelled)}","c":"2b","r":"","core":true,"s":["I [[spelt]] the word correctly.","He has [[spelt]] my name wrong."]},{"k":"spend","b":"spend","zh":"花（時間／金錢）","p":"spent","q":"spent","c":"2a","r":"","core":true,"s":["We [[spent]] the weekend at the beach.","I have [[spent]] all my pocket money."]},{"k":"spill","b":"spill","zh":"溢出","p":"spilt {(AmE: spilled)}","q":"spilt {(AmE: spilled)}","c":"2b","r":"","core":true,"s":["He [[spilt]] his drink on the table.","Someone has [[spilt]] water on the floor."]},{"k":"spin","b":"spin","zh":"旋轉；紡紗","p":"spun","q":"spun","c":"2e","r":"","core":false,"s":["The wheel [[spun]] round and round.","The top has [[spun]] for a minute."]},{"k":"spit","b":"spit","zh":"吐","p":"spat","q":"spat","c":"2d","r":"","core":false,"s":["The boy [[spat]] out the bitter medicine.","He has [[spat]] on the ground."]},{"k":"split","b":"split","zh":"分裂","p":"split","q":"split","c":"1","r":"","core":false,"s":["We [[split]] the bill into four.","The wood has [[split]] in two."]},{"k":"spoil","b":"spoil","zh":"破壞；寵壞","p":"spoilt {(AmE: spoiled)}","q":"spoilt {(AmE: spoiled)}","c":"2b","r":"","core":true,"s":["The rain [[spoilt]] our picnic.","The milk has [[spoilt]]."]},{"k":"spread","b":"spread","zh":"傳播","p":"spread","q":"spread","c":"1","r":"","core":true,"s":["She [[spread]] butter on the bread.","The news has [[spread]] quickly."]},{"k":"spring","b":"spring","zh":"跳；湧現","p":"sprang","q":"sprung","c":"5","r":"","core":false,"s":["The cat [[sprang]] onto the table.","The cat has [[sprung]] out of the box."]},{"k":"stand","b":"stand","zh":"站立","p":"stood","q":"stood","c":"2d","r":"","core":true,"s":["He [[stood]] in the queue for an hour.","We have [[stood]] here for ages."]},{"k":"steal","b":"steal","zh":"偷竊","p":"stole","q":"stolen","c":"5","r":"","core":true,"s":["A thief [[stole]] my bag.","Someone has [[stolen]] my bike."]},{"k":"stick","b":"stick","zh":"黏住","p":"stuck","q":"stuck","c":"2e","r":"","core":true,"s":["I [[stuck]] a photo on the page.","The gum has [[stuck]] to my shoe."]},{"k":"sting","b":"sting","zh":"刺痛","p":"stung","q":"stung","c":"2e","r":"","core":false,"s":["A bee [[stung]] my arm.","The jellyfish has [[stung]] him."]},{"k":"stink","b":"stink","zh":"發臭","p":"stank","q":"stunk","c":"5","r":"","core":false,"s":["The old fish [[stank]].","The bin has [[stunk]] all week."]},{"k":"stride","b":"stride","zh":"大步走","p":"strode","q":"stridden","c":"5","r":"","core":false,"s":["He [[strode]] across the room.","She has [[stridden]] out of the room angrily."]},{"k":"strike","b":"strike","zh":"擊打；罷工","p":"struck","q":"struck","c":"2e","r":"","core":true,"s":["Lightning [[struck]] the tree.","The ball has [[struck]] the window."]},{"k":"strive","b":"strive","zh":"努力；奮鬥","p":"strove","q":"striven","c":"5","r":"","core":false,"s":["She [[strove]] to do her best.","He has [[striven]] to improve."]},{"k":"swear","b":"swear","zh":"發誓；咒罵","p":"swore","q":"sworn","c":"5","r":"","core":true,"s":["He [[swore]] to tell the truth.","She has [[sworn]] to keep the secret."]},{"k":"sweep","b":"sweep","zh":"掃除","p":"swept","q":"swept","c":"2a","r":"","core":true,"s":["She [[swept]] the floor after dinner.","I have [[swept]] the classroom."]},{"k":"swell","b":"swell","zh":"膨脹","p":"swelled","q":"swollen {/ swelled}","c":"6","r":"","core":false,"s":["His ankle [[swelled]] after the fall.","Her eye has [[swollen]] up."]},{"k":"swim","b":"swim","zh":"游泳","p":"swam","q":"swum","c":"5","r":"","core":true,"s":["We [[swam]] in the sea.","I have [[swum]] one hundred metres."]},{"k":"swing","b":"swing","zh":"揮舞；搖擺","p":"swung","q":"swung","c":"2e","r":"","core":true,"s":["The children [[swung]] on the swings.","The door has [[swung]] open."]},{"k":"take","b":"take","zh":"拿；帶","p":"took","q":"taken","c":"5","r":"","core":true,"s":["She [[took]] the bus to school.","I have [[taken]] a lot of photos."]},{"k":"teach","b":"teach","zh":"教","p":"taught","q":"taught","c":"2g","r":"","core":true,"s":["Mr Lee [[taught]] us English.","She has [[taught]] at this school for ten years."]},{"k":"tear","b":"tear","zh":"撕開","p":"tore","q":"torn","c":"5","r":"","core":true,"s":["He [[tore]] the paper in half.","I have [[torn]] my trousers."]},{"k":"tell","b":"tell","zh":"告訴","p":"told","q":"told","c":"2c","r":"","core":true,"s":["She [[told]] me a funny story.","Have you [[told]] your mum?"]},{"k":"think","b":"think","zh":"想；認為","p":"thought","q":"thought","c":"2g","r":"","core":true,"s":["I [[thought]] about it all night.","I have [[thought]] about your idea."]},{"k":"thrive","b":"thrive","zh":"茁壯成長；興旺","p":"thrived {/ throve}","q":"thrived {/ thriven}","c":"7","r":"","core":false,"s":["The plants [[thrived]] in the sun.","The shop has [[thrived]] since it opened."]},{"k":"throw","b":"throw","zh":"扔","p":"threw","q":"thrown","c":"5","r":"","core":true,"s":["He [[threw]] the ball to me.","She has [[thrown]] away her old shoes."]},{"k":"thrust","b":"thrust","zh":"推；刺","p":"thrust","q":"thrust","c":"1","r":"","core":false,"s":["He [[thrust]] his hands into his pockets.","She has [[thrust]] the letter into my hand."]},{"k":"tread","b":"tread","zh":"踩；踏","p":"trod","q":"trodden {/ trod}","c":"5","r":"","core":false,"s":["I [[trod]] on a snail.","Someone has [[trodden]] on my foot."]},{"k":"undergo","b":"undergo","zh":"經歷；承受","p":"underwent","q":"undergone","c":"5","r":"go","core":false,"s":["She [[underwent]] an operation last year.","The school has [[undergone]] many changes."]},{"k":"understand","b":"understand","zh":"理解","p":"understood","q":"understood","c":"2d","r":"stand","core":true,"s":["I [[understood]] the lesson.","Have you [[understood]] the question?"]},{"k":"undertake","b":"undertake","zh":"承擔；從事","p":"undertook","q":"undertaken","c":"5","r":"take","core":false,"s":["He [[undertook]] a difficult task.","We have [[undertaken]] a big project."]},{"k":"undo","b":"undo","zh":"解開；撤銷","p":"undid","q":"undone","c":"5","r":"do","core":true,"s":["She [[undid]] her seatbelt.","I have [[undone]] my shoelaces."]},{"k":"uphold","b":"uphold","zh":"支持；維護","p":"upheld","q":"upheld","c":"2d","r":"hold","core":false,"s":["The judge [[upheld]] the rule.","The school has [[upheld]] its rules."]},{"k":"upset","b":"upset","zh":"使不安；打亂","p":"upset","q":"upset","c":"1","r":"","core":false,"s":["The bad news [[upset]] her.","He has [[upset]] his sister."]},{"k":"wake","b":"wake","zh":"醒來；叫醒","p":"woke {/ waked}","q":"woken {/ waked}","c":"5","r":"","core":true,"s":["I [[woke]] up at seven o'clock.","The noise has [[woken]] the baby."]},{"k":"wear","b":"wear","zh":"穿戴","p":"wore","q":"worn","c":"5","r":"","core":true,"s":["She [[wore]] a red dress to the party.","He has [[worn]] the same shirt all week."]},{"k":"weave","b":"weave","zh":"編織","p":"wove {/ weaved}","q":"woven {/ weaved}","c":"5","r":"","core":false,"s":["Grandma [[wove]] a basket.","The spider has [[woven]] a web."]},{"k":"wed","b":"wed","zh":"結婚","p":"wedded {/ wed}","q":"wedded {/ wed}","c":"7","r":"","core":false,"s":["They [[wedded]] last spring.","They have been [[wedded]] for ten years."]},{"k":"weep","b":"weep","zh":"哭泣","p":"wept","q":"wept","c":"2a","r":"","core":false,"s":["She [[wept]] when she heard the sad news.","The child has [[wept]] all morning."]},{"k":"win","b":"win","zh":"贏得","p":"won","q":"won","c":"2e","r":"","core":true,"s":["Our team [[won]] the match.","She has [[won]] first prize."]},{"k":"wind","b":"wind","zh":"纏繞；上發條","p":"wound","q":"wound","c":"2f","r":"","core":false,"s":["He [[wound]] the clock.","She has [[wound]] the string around her finger."]},{"k":"withdraw","b":"withdraw","zh":"撤回；提取","p":"withdrew","q":"withdrawn","c":"5","r":"draw","core":false,"s":["She [[withdrew]] some money from the bank.","He has [[withdrawn]] from the race."]},{"k":"withhold","b":"withhold","zh":"扣留；保留","p":"withheld","q":"withheld","c":"2d","r":"hold","core":false,"s":["The shop [[withheld]] his money.","She has [[withheld]] the truth."]},{"k":"withstand","b":"withstand","zh":"抵抗；承受","p":"withstood","q":"withstood","c":"2d","r":"stand","core":false,"s":["The old bridge [[withstood]] the storm.","The building has [[withstood]] many typhoons."]},{"k":"wring","b":"wring","zh":"擰；絞","p":"wrung","q":"wrung","c":"2e","r":"","core":false,"s":["She [[wrung]] the wet towel.","He has [[wrung]] out his shirt."]},{"k":"write","b":"write","zh":"寫","p":"wrote","q":"written","c":"5","r":"","core":true,"s":["She [[wrote]] a letter to her friend.","I have [[written]] three emails today."]}],"pat":{"1":{"c":"1D4ED8","l":"A–A–A　三態同形"},"3":{"c":"C2410C","l":"A–B–A　原形 = 過去分詞"},"4":{"c":"7E22CE","l":"A–A–B　原形 = 過去式"},"5":{"c":"BE123C","l":"A–B–C　三態各異"},"6":{"c":"A16207","l":"規則過去式＋兩種過去分詞"},"7":{"c":"475569","l":"特殊：規則與不規則並存"},"2a":{"c":"15803D","l":"A–B–B　字尾 -t"},"2b":{"c":"15803D","l":"A–B–B　英式 -t／美式 -ed"},"2c":{"c":"15803D","l":"A–B–B　字尾 -d"},"2d":{"c":"15803D","l":"A–B–B　只改母音"},"2e":{"c":"15803D","l":"A–B–B　i / a → u"},"2f":{"c":"15803D","l":"A–B–B　-ind → -ound"},"2g":{"c":"15803D","l":"A–B–B　-ought / -aught"}}};
+(function(){
+"use strict";
+const V = DATA.verbs, PAT = DATA.pat;
+const ORDER = ['1','2a','2b','2c','2d','2e','2f','2g','3','4','5','6','7'];
+const LETTERS = [...new Set(V.map(v => v.b[0].toUpperCase()))].sort();
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ---------- storage (per device, never required) ---------- */
+const KEY = 'ivt.v1'; let mem = null;
+function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return mem || {}; } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(e){ mem = DB; } }
+const DB = load();
+DB.box = DB.box || {};
+DB.set = Object.assign({from:LETTERS[0], to:LETTERS[LETTERS.length-1], level:'all', count:10, focus:true}, DB.set || {});
+if (!LETTERS.includes(DB.set.from)) DB.set.from = LETTERS[0];
+if (!LETTERS.includes(DB.set.to)) DB.set.to = LETTERS[LETTERS.length-1];
+const SET = DB.set;
+const boxOf = k => (DB.box[k] && DB.box[k].b) || 0;
+
+/* ---------- forms: main (British) + grey variants ---------- */
+const FC = {};
+function parse(str){
+  if (FC[str]) return FC[str];
+  const main = str.replace(/\{.*?\}/g, '').trim();
+  const vars = []; let pron = '';
+  for (const m of str.matchAll(/\{(.*?)\}/g)) {
+    const c = m[1];
+    if (/^\/[^\s\/]+\/$/.test(c)) { pron = c; continue; }
+    vars.push({text: c, words: (c.replace(/（.*?）/g, '').match(/[A-Za-z]+/g) || []).filter(w => w !== 'AmE').map(w => w.toLowerCase())});
+  }
+  const acc = new Set(main.split('/').map(x => x.trim().toLowerCase()));
+  acc.add(main.toLowerCase()); acc.add(main.toLowerCase().replace(/\s*\/\s*/g, '/'));
+  vars.forEach(v => v.words.forEach(w => acc.add(w)));
+  return FC[str] = {main, vars, pron, acc};
+}
+const formHtml = str => { const f = parse(str); return esc(f.main) + f.vars.map(v => '<span class="var">' + esc(v.text.replace(/^\//, '').trim()) + '</span>').join('') + (f.pron ? '<span class="var">' + esc(f.pron) + '</span>' : ''); };
+const norm = s => s.toLowerCase().replace(/[.\s]+$/,'').replace(/^\s+/,'').replace(/\s+/g,' ').replace(/\s*\/\s*/g,'/');
+const strict = (v, which) => (v.k === 'be' && which === 0) || (v.k === 'bear' && which === 1);
+function accepted(v, which, bracket){
+  if (bracket !== undefined && strict(v, which)) return new Set([bracket.toLowerCase()]);
+  const set = new Set(parse(which === 0 ? v.p : v.q).acc); if (bracket) set.add(bracket.toLowerCase()); return set;
+}
+const dupBase = b => V.filter(v => v.b === b).length > 1;
+const label = v => v.b + (dupBase(v.b) ? '（' + v.zh.split('；')[0].replace(/（.*?）/g, '') + '）' : '');
+
+/* ---------- range & pool ---------- */
+function bounds(){ const a = LETTERS.indexOf(SET.from), b = LETTERS.indexOf(SET.to); return [Math.min(a, b), Math.max(a, b)]; }
+function inRange(v){ const i = LETTERS.indexOf(v.b[0].toUpperCase()), [lo, hi] = bounds(); return i >= lo && i <= hi; }
+const pool = () => V.filter(v => inRange(v) && (SET.level === 'all' || v.core));
+function stats(list){ let n = 0, l = 0, m = 0; list.forEach(v => { const b = boxOf(v.k); if (!b) n++; else if (b >= 4) m++; else l++; }); return {n, l, m}; }
+function chunks(){
+  const counts = LETTERS.map(L => V.filter(v => v.b[0].toUpperCase() === L).length), total = counts.reduce((a, b) => a + b, 0);
+  const out = []; let start = 0, acc = 0;
+  LETTERS.forEach((L, i) => { acc += counts[i]; const target = total / 4 * (out.length + 1);
+    if ((acc >= target && out.length < 3) || i === LETTERS.length - 1) { out.push([LETTERS[start], L]); start = i + 1; } });
+  return out.filter(c => LETTERS.indexOf(c[0]) <= LETTERS.indexOf(c[1]));
+}
+
+/* ---------- audio ---------- */
+const canSpeak = 'speechSynthesis' in window;
+const SAY = {read:['reed','red','red'], lead:['leed','led','led'], tear:['tare','tore','torn'], sew:['so','sewed','sewn'], sow:['so','sowed','sown'], wind:['wined','wound','wound'], bow:['bow']};
+function say(text){ if (!canSpeak) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-GB'; u.rate = .85; const vs = speechSynthesis.getVoices().filter(x => /en-GB/i.test(x.lang)); if (vs[0]) u.voice = vs[0]; speechSynthesis.speak(u); } catch(e){} }
+function sayVerb(k){ const v = V.find(x => x.k === k); if (!v) return; const o = SAY[v.b]; const p = parse(v.p).main.split('/')[0].trim(), q = parse(v.q).main.split('/')[0].trim();
+  say(o ? o.join('. ') : [v.b, p, q].join('. ')); }
+
+/* ---------- shared pieces ---------- */
+const chip = code => '<span class="tag" style="--c:#' + PAT[code].c + '">' + code + '</span>';
+const sentHtml = (s, cls) => esc(s).replace(/\[\[(.*?)\]\]/g, (m, a) => '<mark' + (cls ? ' class="' + cls + '"' : '') + '>' + a + '</mark>');
+function formsBox(v){
+  return '<div class="forms"><div class="form"><small>Past 過去式</small><b>' + formHtml(v.p) + '</b></div><div class="form"><small>Past participle 過去分詞</small><b>' + formHtml(v.q) + '</b></div></div>';
+}
+function detail(v){
+  return formsBox(v) +
+    '<div class="pat">' + chip(v.c) + '<span>' + esc(PAT[v.c].l) + '</span>' + (v.r ? '<span class="muted">詞根 ' + esc(v.r) + '</span>' : '') + (canSpeak ? '<button class="speak" data-say="' + v.k + '">Listen 發音</button>' : '') + '</div>' +
+    '<div class="eg"><div>' + sentHtml(v.s[0]) + '</div><div>' + sentHtml(v.s[1]) + '</div></div>';
+}
+function setBox(k, ok, hint){
+  const e = DB.box[k] || {b:0, seen:0, wrong:0};
+  e.seen++; if (ok) { if (!hint) e.b = Math.min(5, (e.b || 0) + 1); else e.b = Math.max(1, e.b || 0); } else { e.b = 1; e.wrong++; }
+  DB.box[k] = e; save();
+}
+
+/* ---------- home ---------- */
+let S = null; // session
+function home(){
+  S = null;
+  const list = pool(), st = stats(list), tot = Math.max(1, list.length);
+  const first = list.length ? list[0].b : '–', last = list.length ? list[list.length - 1].b : '–';
+  const opts = sel => LETTERS.map(L => '<option value="' + L + '"' + (L === sel ? ' selected' : '') + '>' + L + '</option>').join('');
+  const cs = chunks();
+  const spectrum = ORDER.map(c => '<i style="background:#' + PAT[c].c + '">' + c + '</i>').join('');
+  const n = list.length;
+  app.innerHTML =
+  '<header class="hero"><div class="eyebrow">S1 English · Revision</div><h1>Irregular Verb Trainer</h1>' +
+  '<p>先選範圍，再選練習方式。每個動詞的顏色代表它的變化規律，答錯的動詞會更常出現。</p><div class="spectrum" aria-hidden="true">' + spectrum + '</div></header>' +
+
+  '<section class="card"><h2><span class="step">1</span>範圍 <small>Range</small></h2>' +
+  '<div class="range"><label>由 From<select id="from">' + opts(SET.from) + '</select></label><span class="to">至</span><label>至 To<select id="to">' + opts(SET.to) + '</select></label></div>' +
+  '<div class="chips" role="group" aria-label="快速範圍">' + '<button class="chip" data-range="' + LETTERS[0] + LETTERS[LETTERS.length - 1] + '" aria-pressed="' + (SET.from === LETTERS[0] && SET.to === LETTERS[LETTERS.length - 1]) + '">全部 ' + LETTERS[0] + '–' + LETTERS[LETTERS.length - 1] + '</button>' +
+  cs.map(c => '<button class="chip" data-range="' + c[0] + c[1] + '" aria-pressed="' + (SET.from === c[0] && SET.to === c[1]) + '">' + c[0] + '–' + c[1] + '</button>').join('') + '</div>' +
+  '<div class="seg" role="group" aria-label="動詞級別"><button data-level="all" aria-pressed="' + (SET.level === 'all') + '">全部動詞</button><button data-level="core" aria-pressed="' + (SET.level === 'core') + '">只練核心</button></div>' +
+  '<div class="summary">' + (n ? '<div><b>' + n + '</b> 個動詞 <span class="muted">· ' + esc(first) + ' → ' + esc(last) + '</span></div>' +
+  '<div class="bar" role="img" aria-label="新 ' + st.n + '，練習中 ' + st.l + '，已掌握 ' + st.m + '"><i style="width:' + (st.m / tot * 100) + '%;background:var(--good)"></i><i style="width:' + (st.l / tot * 100) + '%;background:#E0A100"></i></div>' +
+  '<div class="legend"><span style="--c:var(--good)">已掌握 ' + st.m + '</span><span style="--c:#E0A100">練習中 ' + st.l + '</span><span style="--c:var(--line)">未練習 ' + st.n + '</span></div>' : '<div class="warn">這個範圍內沒有動詞，請調整範圍或級別。</div>') + '</div></section>' +
+
+  '<section class="card"><h2><span class="step">2</span>題數 <small>Questions</small></h2>' +
+  '<div class="seg" role="group" aria-label="題數">' + [10, 20, 0].map(x => '<button data-count="' + x + '" aria-pressed="' + (SET.count === x) + '">' + (x || '全部') + '</button>').join('') + '</div>' +
+  '<label class="check"><input type="checkbox" id="focus"' + (SET.focus ? ' checked' : '') + '><span>優先練習較弱的動詞（建議開啟）</span></label></section>' +
+
+  '<section class="card"><h2><span class="step">3</span>練習方式 <small>Mode</small></h2><div class="modes">' +
+  [['flash','記憶卡','Flashcards','先想答案，再翻面核對'],['type','輸入測驗','Type it','輸入過去式和過去分詞'],['choice','選擇題','Multiple choice','從四個選項中揀答案'],['cloze','句子填空','Sentences','在句子中選用正確形式'],['browse','查表','Browse','按範圍查看，可遮蓋答案自測']]
+  .map(m => '<button class="mode" data-mode="' + m[0] + '"' + (n ? '' : ' disabled') + '><b>' + m[1] + ' · ' + m[2] + '</b><span>' + m[3] + '</span></button>').join('') + '</div></section>' +
+  '<div class="foot"><span>進度只保存在這部裝置上。</span><button class="link" id="reset">清除進度</button></div>';
+}
+
+/* ---------- session ---------- */
+function pick(list){
+  let a = SET.focus ? list.map(v => [v, boxOf(v.k) + Math.random() * 1.6]).sort((x, y) => x[1] - y[1]).map(x => x[0]) : shuffle(list);
+  const n = SET.count || a.length; return shuffle(a.slice(0, Math.min(n, a.length)));
+}
+function start(mode, items){
+  if (mode === 'browse') return browse();
+  S = {mode, items: items || pick(pool()), i: 0, res: [], phase: 'ask', step: 0, flip: false, hint: false};
+  if (!S.items.length) return home();
+  question();
+}
+function top(){
+  const done = S.i, total = S.items.length;
+  return '<div class="bar-top"><button class="x" data-act="exit" aria-label="返回">✕</button><div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + done + '"><i style="width:' + (done / total * 100) + '%"></i></div><div class="count">' + Math.min(done + 1, total) + ' / ' + total + '</div></div>';
+}
+function advance(ok, hint){
+  const v = S.items[S.i]; S.res.push({v, ok}); setBox(v.k, ok, hint);
+  S.i++; S.phase = 'ask'; S.step = 0; S.flip = false; S.hint = false;
+  S.i >= S.items.length ? results() : question();
+}
+function question(){
+  const v = S.items[S.i];
+  ({flash: qFlash, type: qType, choice: qChoice, cloze: qCloze})[S.mode](v);
+}
+const focusId = id => setTimeout(() => { const e = document.getElementById(id); if (e) e.focus(); }, 30);
+
+/* flashcards */
+function qFlash(v){
+  if (!S.flip) {
+    app.innerHTML = top() + '<div class="q"><div class="label">Base form 原形</div><div class="word">' + esc(v.b) + '</div><div class="zh">' + esc(v.zh) + '</div>' +
+      '<p class="muted">先在心裏想出過去式和過去分詞。</p><button class="btn" data-act="flip" id="go">顯示答案</button></div>';
+    focusId('go');
+  } else {
+    app.innerHTML = top() + '<div class="q"><div class="label">Base form 原形</div><div class="word">' + esc(v.b) + '</div><div class="zh">' + esc(v.zh) + '</div>' + detail(v) +
+      '<div class="row2"><button class="btn bad" data-act="no">仍需練習</button><button class="btn good" data-act="yes">記住了</button></div></div>';
+  }
+}
+
+/* type */
+function qType(v){
+  if (S.phase === 'ask') {
+    app.innerHTML = top() + '<div class="q"><div class="label">Base form 原形</div><div class="word">' + esc(v.b) + '</div><div class="zh">' + esc(v.zh) + '</div>' +
+      '<div class="fields"><label class="field">Past 過去式<input type="text" id="a0" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>' +
+      '<label class="field">Past participle 過去分詞<input type="text" id="a1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label></div>' +
+      '<button class="btn" data-act="check">核對</button></div>';
+    focusId('a0');
+  } else {
+    const r = S.last; app.innerHTML = top() + '<div class="q"><div class="label">Base form 原形</div><div class="word">' + esc(v.b) + '</div><div class="zh">' + esc(v.zh) + '</div>' +
+      '<div class="fields"><label class="field">Past 過去式<input type="text" class="' + (r[0] ? 'ok' : 'bad') + '" value="' + esc(r.t[0]) + '" disabled></label>' +
+      '<label class="field">Past participle 過去分詞<input type="text" class="' + (r[1] ? 'ok' : 'bad') + '" value="' + esc(r.t[1]) + '" disabled></label></div>' +
+      fb(v, r[0] && r[1]) + '<button class="btn" data-act="next" id="go">' + (S.i + 1 >= S.items.length ? '看結果' : '下一題') + '</button></div>';
+    focusId('go');
+  }
+}
+function fb(v, ok, extra){
+  return '<div class="fb ' + (ok ? 'good' : 'bad') + '" aria-live="polite"><h3>' + (ok ? '✓ 正確' : '✗ 再看一次') + '</h3>' + (extra || '') + detail(v) + '</div>';
+}
+function checkType(){
+  const v = S.items[S.i], t = [$('#a0').value, $('#a1').value];
+  if (!t[0].trim() && !t[1].trim()) { focusId('a0'); return; }
+  S.last = {0: accepted(v, 0).has(norm(t[0])), 1: accepted(v, 1).has(norm(t[1])), t};
+  S.phase = 'fb'; S.ok = S.last[0] && S.last[1]; qType(v);
+}
+
+/* multiple choice */
+function regular(b){ if (/e$/.test(b)) return b + 'd'; if (/[^aeiou]y$/.test(b)) return b.slice(0, -1) + 'ied'; return b + 'ed'; }
+function options(v, which){
+  const main = parse(which ? v.q : v.p).main, acc = accepted(v, which), other = parse(which ? v.p : v.q).main;
+  const cands = [], add = s => { s = s.trim(); if (s && !acc.has(s.toLowerCase()) && !cands.includes(s)) cands.push(s); };
+  add(other); add(regular(v.b)); add(v.b);
+  shuffle(V.filter(x => x.c === v.c && x.k !== v.k)).slice(0, 4).forEach(x => add(parse(Math.random() < .5 ? x.p : x.q).main.split('/')[0]));
+  shuffle(V).slice(0, 6).forEach(x => add(parse(x.q).main.split('/')[0]));
+  // keep the two most useful distractors (other tense, regularised) in the pick
+  const first = cands.slice(0, 2), rest = shuffle(cands.slice(2));
+  return shuffle([main, ...first, ...rest].slice(0, 4).concat([]).filter((x, i, a) => a.indexOf(x) === i));
+}
+function qChoice(v){
+  const w = S.step;
+  if (S.phase === 'ask') {
+    S.opts = options(v, w);
+    app.innerHTML = top() + '<div class="q"><div class="label">' + (w ? 'Past participle 過去分詞' : 'Past 過去式') + ' · ' + (w + 1) + ' / 2</div><div class="word">' + esc(v.b) + '</div><div class="zh">' + esc(v.zh) + '</div>' +
+      '<div class="opts">' + S.opts.map((o, i) => '<button class="opt" data-opt="' + i + '">' + esc(o) + '</button>').join('') + '</div></div>';
+  } else {
+    const main = parse(w ? v.q : v.p).main;
+    const cls = o => o === main ? 'ok' : (o === S.pick ? 'bad' : '');
+    const done = w === 1;
+    app.innerHTML = top() + '<div class="q"><div class="label">' + (w ? 'Past participle 過去分詞' : 'Past 過去式') + ' · ' + (w + 1) + ' / 2</div><div class="word">' + esc(v.b) + '</div><div class="zh">' + esc(v.zh) + '</div>' +
+      '<div class="opts">' + S.opts.map(o => '<button class="opt ' + cls(o) + '" disabled>' + (o === main ? '✓ ' : o === S.pick ? '✗ ' : '') + esc(o) + '</button>').join('') + '</div>' +
+      (done ? fb(v, S.ok) : '') + '<button class="btn" data-act="next" id="go">' + (done ? (S.i + 1 >= S.items.length ? '看結果' : '下一題') : '下一步：過去分詞') + '</button></div>';
+    focusId('go');
+  }
+}
+
+/* sentences */
+function qCloze(v){
+  if (S.phase === 'ask' && S.which === undefined) S.which = Math.random() < .5 ? 0 : 1;
+  const w = S.which, sent = v.s[w], m = sent.match(/\[\[(.*?)\]\]/), ans = m[1];
+  const parts = sent.split(m[0]);
+  const hint = S.hint ? '<div class="muted" style="font-size:15px">提示：' + esc(v.zh) + ' · 第一個字母 <b>' + esc(ans[0]) + '</b></div>' : '';
+  if (S.phase === 'ask') {
+    app.innerHTML = top() + '<div class="q"><div class="label">Fill in the blank 填空</div><p class="sentence">' + esc(parts[0]) +
+      '<input type="text" id="a0" style="--w:' + Math.max(7, ans.length + 3) + 'ch" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="答案"> <span class="base">(' + esc(label(v)) + ')</span>' + esc(parts[1]) + '</p>' + hint +
+      '<div class="row2"><button class="btn ghost" data-act="hint"' + (S.hint ? ' disabled' : '') + '>提示</button><button class="btn" data-act="check">核對</button></div></div>';
+    focusId('a0');
+  } else {
+    const ok = S.ok, r = S.last;
+    app.innerHTML = top() + '<div class="q"><div class="label">Fill in the blank 填空</div><p class="sentence">' + esc(parts[0]) + '<mark class="' + (ok ? 'good' : 'bad') + '">' + esc(r.t || '—') + '</mark>' + (ok ? '' : ' → <mark class="good">' + esc(ans) + '</mark>') + esc(parts[1]) + '</p>' +
+      fb(v, ok, '<div>' + (w ? '這句要用過去分詞（have / has / was + p.p.）。' : '這句要用過去式。') + '</div>') + '<button class="btn" data-act="next" id="go">' + (S.i + 1 >= S.items.length ? '看結果' : '下一題') + '</button></div>';
+    focusId('go');
+  }
+}
+function checkCloze(){
+  const v = S.items[S.i], w = S.which, ans = v.s[w].match(/\[\[(.*?)\]\]/)[1], t = $('#a0').value;
+  if (!t.trim()) { focusId('a0'); return; }
+  S.last = {t: t.trim()}; S.ok = accepted(v, w, ans).has(norm(t)); S.phase = 'fb'; qCloze(v);
+}
+
+/* ---------- results ---------- */
+function results(){
+  const ok = S.res.filter(r => r.ok).length, total = S.res.length, missed = S.res.filter(r => !r.ok).map(r => r.v);
+  const msg = ok === total ? '全部答對！可以換一個範圍再試。' : ok / total >= .7 ? '做得不錯，看看下面答錯的動詞。' : '多練幾次就會熟。答錯的動詞稍後會再出現。';
+  app.innerHTML = '<div class="q"><div class="score"><div class="label">Result 結果</div><b>' + ok + ' / ' + total + '</b><p class="muted">' + msg + '</p></div>' +
+    (missed.length ? '<h3>需要再練的動詞</h3><div class="miss">' + missed.map(v => '<div><b>' + esc(label(v)) + '</b><span>' + formHtml(v.p) + '</span><span>' + formHtml(v.q) + '</span></div>').join('') + '</div>' : '') +
+    (missed.length ? '<button class="btn" data-act="redo">再練答錯的 ' + missed.length + ' 個</button>' : '') +
+    '<button class="btn ' + (missed.length ? 'ghost' : '') + '" data-act="again">再來一輪</button><button class="btn ghost" data-act="exit">返回首頁</button></div>';
+  S.missed = missed;
+}
+
+/* ---------- browse ---------- */
+let B = {cover: false, q: '', pat: null, open: null};
+function browse(){
+  S = {mode: 'browse'};
+  const list = pool().filter(v => (!B.pat || v.c === B.pat) && (!B.q || (v.b + ' ' + v.zh + ' ' + v.p + ' ' + v.q).toLowerCase().includes(B.q.toLowerCase())));
+  const have = new Set(pool().map(v => v.c)), codes = ORDER.filter(c => have.has(c));
+  app.innerHTML = '<div class="bar-top" style="grid-template-columns:auto 1fr"><button class="x" data-act="exit" aria-label="返回">✕</button><div class="count" style="text-align:left;font-size:15px">' + list.length + ' 個動詞 · ' + SET.from + '–' + SET.to + '</div></div>' +
+    '<div class="tools"><input class="search" id="q" type="search" placeholder="搜尋動詞或中文" value="' + esc(B.q) + '" aria-label="搜尋">' +
+    '<div class="chips"><button class="chip" data-pat="" aria-pressed="' + !B.pat + '">全部規律</button>' + codes.map(c => '<button class="chip" data-pat="' + c + '" aria-pressed="' + (B.pat === c) + '" style="' + (B.pat === c ? 'background:#' + PAT[c].c + ';border-color:#' + PAT[c].c : '') + '">' + c + '</button>').join('') + '</div>' +
+    '<label class="check"><input type="checkbox" id="cover"' + (B.cover ? ' checked' : '') + '><span>遮蓋過去式和過去分詞（點一下顯示）</span></label></div>' +
+    '<div class="vlist ' + (B.cover ? 'cover' : '') + '" style="margin-top:12px">' + list.map(v => {
+      const b = boxOf(v.k), d = b >= 4 ? 'm' : b ? 'l' : '';
+      const open = B.open === v.k;
+      return '<div class="v" style="--c:#' + PAT[v.c].c + '"><button class="v-head" data-open="' + v.k + '" aria-expanded="' + open + '"><span><b>' + esc(v.b) + '</b><small><span class="dot ' + d + '"></span>' + esc(v.zh) + '</small></span>' +
+        '<span class="cell' + (B.cover && !open ? ' hide' : '') + '">' + formHtml(v.p) + '</span><span class="cell' + (B.cover && !open ? ' hide' : '') + '">' + formHtml(v.q) + '</span></button>' +
+        (open ? '<div class="v-more"><div class="pat">' + chip(v.c) + '<span>' + esc(PAT[v.c].l) + '</span>' + (v.r ? '<span class="muted">詞根 ' + esc(v.r) + '</span>' : '') + (canSpeak ? '<button class="speak" data-say="' + v.k + '">Listen 發音</button>' : '') + '</div><div class="eg"><div>' + sentHtml(v.s[0]) + '</div><div>' + sentHtml(v.s[1]) + '</div></div></div>' : '') + '</div>';
+    }).join('') + '</div>';
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button, [data-open]'); if (!t) return;
+  const d = t.dataset;
+  if (d.say) return sayVerb(d.say);
+  if (d.range) { const r = d.range; SET.from = r[0]; SET.to = r[1]; save(); return home(); }
+  if (d.level) { SET.level = d.level; save(); return home(); }
+  if (d.count !== undefined) { SET.count = +d.count; save(); return home(); }
+  if (d.mode) return start(d.mode);
+  if (d.open !== undefined) { B.open = B.open === d.open ? null : d.open; return browse(); }
+  if (d.pat !== undefined) { B.pat = d.pat || null; return browse(); }
+  if (t.id === 'reset') { if (t.dataset.arm) { DB.box = {}; save(); return home(); } t.dataset.arm = 1; t.textContent = '再按一次確認清除'; return; }
+  const act = d.act; if (!act) return;
+  const v = S && S.items && S.items[S.i];
+  if (act === 'exit') return home();
+  if (act === 'flip') { S.flip = true; return question(); }
+  if (act === 'yes') return advance(true);
+  if (act === 'no') return advance(false);
+  if (act === 'check') return S.mode === 'type' ? checkType() : checkCloze();
+  if (act === 'hint') { S.hint = true; S.usedHint = true; const val = $('#a0').value; question(); $('#a0').value = val; return; }
+  if (act === 'next') {
+    if (S.mode === 'choice' && S.step === 0) { S.step = 1; S.phase = 'ask'; return question(); }
+    const hint = !!S.usedHint; S.usedHint = false; S.which = undefined;
+    return advance(S.ok, hint);
+  }
+  if (act === 'redo') return start(S.mode, shuffle(S.missed));
+  if (act === 'again') return start(S.mode);
+});
+document.addEventListener('click', e => {
+  const o = e.target.closest('[data-opt]'); if (!o || !S || S.mode !== 'choice' || S.phase !== 'ask') return;
+  const v = S.items[S.i], w = S.step, main = parse(w ? v.q : v.p).main; S.pick = S.opts[+o.dataset.opt];
+  const ok = accepted(v, w).has(norm(S.pick)); S.phase = 'fb';
+  if (w === 0) S.ok0 = ok; else S.ok = ok && S.ok0;
+  qChoice(v);
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'from' || e.target.id === 'to') { SET[e.target.id] = e.target.value; save(); home(); }
+  if (e.target.id === 'focus') { SET.focus = e.target.checked; save(); }
+  if (e.target.id === 'cover') { B.cover = e.target.checked; browse(); }
+  if (e.target.id === 'q') { B.q = e.target.value; const p = e.target.selectionStart; browse(); const q = $('#q'); q.focus(); q.setSelectionRange(p, p); }
+});
+document.addEventListener('change', e => { if (e.target.id === 'from' || e.target.id === 'to') focusId(e.target.id); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !S) return;
+  if (S.mode === 'type' && S.phase === 'ask') { if (e.target.id === 'a0') { e.preventDefault(); $('#a1').focus(); } else if (e.target.id === 'a1') { e.preventDefault(); checkType(); } }
+  else if (S.mode === 'cloze' && S.phase === 'ask' && e.target.id === 'a0') { e.preventDefault(); checkCloze(); }
+});
+
+home();
+})();
+</script>
+</body></html>
